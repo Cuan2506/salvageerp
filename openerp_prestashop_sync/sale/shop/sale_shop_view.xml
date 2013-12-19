@@ -62,7 +62,7 @@
                             </page>
                             <page string="Products Info">
                                 <separator string="Products" colspan="4"/>
-                                <field name="product_ids" colspan="4" nolabel="1"/>
+                                <field name="product_ids" colspan="4" nolabel="1" domain="[('presta_exportable','=',True)]"/>
                             </page>
                 	</notebook>
                 	</xpath>

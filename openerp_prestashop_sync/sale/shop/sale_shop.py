@@ -234,7 +234,6 @@ class sale_shop(osv.osv):
             image_ids = self.pool.get('image.image').get_updated_ids(cr, uid,
                                                                 shop_id,
                                                                 context=context)
-
             self.pool.get('image.image').export_image_products(cr, uid, shop_id,
                                                                image_ids,
                                                                context=context)
@@ -295,8 +294,8 @@ class sale_shop(osv.osv):
         new_cnt = copy.deepcopy(context)
         new_cnt['read_at_once'] = True
 
-        self.do_synch(cr, uid, ids, 'product.product', context=new_cnt)
-        self.do_synch(cr, uid, ids, 'product.combination', context=new_cnt)
+#         self.do_synch(cr, uid, ids, 'product.product', context=new_cnt)
+#         self.do_synch(cr, uid, ids, 'product.combination', context=new_cnt)
         self.do_synch(cr, uid, ids, 'stock.availables', context=new_cnt)
 
         return True
@@ -337,10 +336,10 @@ class sale_shop(osv.osv):
         return True
 
     def export_product(self, cr, uid, ids, context={}, export_ids=[]):
-
+        new_cnt = copy.deepcopy(context)
+        new_cnt['read_at_once'] = True
         for shop_id,product_ids \
         in self.get_products(cr, uid, ids, export_ids, context=context).items():
-            
             tag_ids = self.pool.get('prestashop.tag').get_updated_ids(cr, uid,
                                                             shop_id,
                                                             context=context)
@@ -392,18 +391,19 @@ class sale_shop(osv.osv):
                                                             options_value_ids,
                                                             context=context)
 
-            stock_avail_ids = self.pool.get('stock.availables').get_updated_ids(cr, uid,
-                                                            shop_id,
-                                                            context=context)
-            if stock_avail_ids:
-                self.pool.get('stock.availables').export_to_prestashop(cr, uid,
-                                                           shop_id, stock_avail_ids,
-                                                           context=context)
-            self.export_images(cr, uid, ids, context)
             self.pool.get('product.product').export_to_prestashop(cr, uid,
                                                           shop_id, product_ids,
                                                           context=context)
-
+            stock_aval_ids = self.pool.get('stock.availables').search(cr, uid, [], context=context)
+            self.do_synch(cr, uid, ids, 'stock.availables', context=new_cnt)
+            imp_stock_aval_ids = self.pool.get('stock.availables').search(cr, uid, [], context=context)
+            stock_avail_ids = list(set(imp_stock_aval_ids)-set(stock_aval_ids))
+            if stock_avail_ids:
+                stock_avail_browse = self.pool.get('stock.availables').browse(cr, uid, stock_avail_ids, context=context)[0]
+                self.pool.get('stock.availables').write(cr, uid, [stock_avail_browse.id], {'quantity': stock_avail_browse.product_id.qty_available}, context=context)
+                self.pool.get('stock.availables').export_to_prestashop(cr, uid,
+                                                           shop_id, stock_avail_ids,
+                                                           context=context)
             self.write(cr, uid, shop_id, {
                         'last_sync_date': time.strftime("%Y-%m-%d %H:%M:%S")
                         })

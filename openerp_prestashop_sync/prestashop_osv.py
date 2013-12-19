@@ -111,9 +111,7 @@ def get_openerp_data(self, cr, uid, shop_id, presta_dicts, context=None):
     if not isinstance(presta_dicts,(list,tuple)):
 
         presta_dicts = [presta_dicts]
-
     for presta_dict in presta_dicts:
-
         result = {}
 
         if record_name in presta_dict:
@@ -339,6 +337,7 @@ def read_from_prestashop(self, cr, uid, shop_id, openerp_ids, context=None,
                                     for openerp_id in openerp_ids]
     else:
         ext_ids = [openerp_id for openerp_id in openerp_ids]
+    
     if connection and ext_ids:
 
         if context.get('read_at_once',False):
@@ -369,10 +368,10 @@ def read_from_prestashop(self, cr, uid, shop_id, openerp_ids, context=None,
             ret_val = connection.read_prestashop(self._prestashop_name, ext_ids,
                                                  options=options,
                                                  all_fields=False)
+
         else:
 
             ret_val = connection.read_prestashop(self._prestashop_name, ext_ids)
-
     return ret_val
 
 def search_from_prestashop(self, cr, uid, shop_id, presta_ids=[], context=None):
@@ -392,13 +391,11 @@ def search_from_prestashop(self, cr, uid, shop_id, presta_ids=[], context=None):
     connection = shop_pool.get_presta_shop(cr, uid, shop_id, context=context)
 
     options = {}
-
     if presta_ids:
 
         options = {
                    'filter[id]':'[' +'|'.join( str(x) for x in presta_ids) + ']'
                   }
-
     res_val = connection.search_prestashop(self._prestashop_name,options)
     if res_val.get('errors'):
         if isinstance(res_val['errors']['error'],(list,tuple)):
@@ -620,11 +617,9 @@ def import_from_prestashop_thread(self, cr, uid, shop_id, ids=[], context={},
 
         ids = self.search_from_prestashop(cr, uid, shop_id, context=context)
         convert_presta = False
-
     read_preasta_datas = self.read_from_prestashop(cr, uid, shop_id, ids,
                                              context=context,
                                              convert_presta=convert_presta)
-
     trans_pool = self.pool.get('ir.translation')
     fields_get = self.fields_get(cr, uid,
                                  context=context)

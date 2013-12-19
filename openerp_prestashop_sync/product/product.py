@@ -25,6 +25,7 @@ from osv import fields
 from tools.translate import _
 import netsvc
 import time
+import random
 
 
 class stock_availables(osv.osv):
@@ -70,7 +71,12 @@ class product_category(osv.osv):
             'meta_description':fields.char('Meta Description', size=64,
                                            translate=True),
             'link_rewrite':fields.char('Link Rewrite', size=64, translate=True),
+            'presta_categ': fields.boolean('Prestashop Category'),
             }
+    
+    _defaults = {
+                 'presta_categ': False,
+                 }
     
     
     def _set_associations_categories(self, cr, uid, shop_id, self_obj, context={}):
@@ -235,15 +241,13 @@ class product_category(osv.osv):
 
         up_ids = []
 
-        openerp_ids = self.search(cr, uid, [], context=context, order='id')
+        openerp_ids = self.search(cr, uid, [('presta_categ', '=', True)], context=context, order='id')
         shop_obj = self.pool.get('sale.shop').browse(cr, uid, shop_id,
                                                      context=context)
 
         if not shop_obj.last_sync_date:
             return openerp_ids
-
         for openerp_id in openerp_ids :
-
             if openerp_id == shop_obj.categ_id.id:
                 continue
 
@@ -259,14 +263,27 @@ class product_category(osv.osv):
                     ('write_date','>',shop_obj.last_sync_date),
                     ('create_date','>',shop_obj.last_sync_date),
                     ('id','=',openerp_id)
+                    
             ])
-
             if ref_id:
                 up_ids.append(openerp_id)
 
         return up_ids
 
 product_category()
+
+class product_template(osv.osv):
+    _inherit = "product.template"
+    _description = "Product Template"
+
+    _columns = {
+                'description': fields.text('Description',translate=True, size=800),
+                'description_sale': fields.text('Description',translate=True, size=800),
+                }
+    
+product_template()
+
+
 
 class product_product(osv.osv):
 
@@ -370,14 +387,114 @@ class product_product(osv.osv):
                 'create_date':fields.datetime('Create Date',
                                    help="Product created date for prestashop"),
                 'image_ids':fields.one2many('image.image', 'product_id',
-                                            'Images')
+                                            'Images'),
+                'presta_categ_id':fields.many2one('product.category',"Prestashop Category"),
+                'default_code' : fields.char('Internal Reference', size=32, select=True),
     }
 
     _defaults = {
                  'is_carrier':False,
                  'date_add': time.strftime('%Y-%m-%d %H:%M:%S'),
                  }
+    
+    
+    def export_to_prestashop(self, cr, uid, shop_id, ids, context={}):
+        if not ids:
+            return False
 
+        default_code = self.pool.get('sale.shop').get_default_lang(cr, uid, shop_id)
+        context['lang'] = default_code
+        fields_get = self.fields_get(cr, uid,
+                                 context=context)
+        fields_translate = [x for x in fields_get \
+                            if fields_get[x].get('translate',False)]
+
+        new_ids = [[x] for x in ids]
+
+        for ids in new_ids:
+            for presta_data,openerp_id \
+            in zip(self.get_prestashop_data(cr, uid, shop_id, ids,
+                      context=context,translation_fields=fields_translate),ids):
+                presta_id = self.get_ext_ref(cr, uid, shop_id, openerp_id,
+                                             context=context)
+                if presta_id:
+                    presta_data = self.write_to_prestashop(cr, uid, shop_id,
+                                                openerp_id, presta_data,
+                                                context, convert_presta=True)
+                    
+                    if  not presta_data or 'errors' in presta_data:
+
+                        self.pool.get('prestashop.log').register_log(cr, uid,
+                                                                     shop_id,
+                                                                     self._name,
+                                                        _("Error While writing External Record for object %s Openerp ID %s Error %s"%(
+                                                                  self._name,
+                                                                  openerp_id,
+                                                                  presta_data)),
+                                                             'error', 'export',
+                                                             context=context)
+
+                        cr.commit()
+
+                        continue
+
+                    self.pool.get('prestashop.log').register_log(cr, uid, shop_id, self._name,
+                                                                _("Record Write for %s openerp id %s External id %s"%(self._name,openerp_id, presta_id)),
+                                                             'info', 'export', context=context)
+
+                else:
+
+                    presta_data = self.create_to_prestashop(cr, uid, shop_id,
+                                               openerp_id, presta_data, context)
+                    if 'errors' in presta_data:
+
+                        self.pool.get('prestashop.log').register_log(cr, uid, shop_id, self._name,
+                                                                _("Error While creating External Record for object %s Openerp ID %s Error %s"%(self._name,openerp_id, presta_data)),
+                                                                 'error', 'export', context=context)
+
+                        cr.commit()
+
+                        continue
+
+                    self.pool.get('prestashop.log').register_log(cr, uid, shop_id, self._name,
+                                                                _("Record Created for %s openerp id %s External id %s"%(self._name,openerp_id, presta_data)),
+                                                             'info', 'export', context=context)
+        cr.commit()
+
+        return True
+    
+    
+    def product_image_import(self, cr, uid, ids, context={}):
+        image_obj = self.pool.get('image.image')
+        for product in self.browse(cr, uid, ids, context=context):
+            if product.image_medium:
+                data_attach = {
+                    'name': str(random.randrange(100))+'.png',
+                    'datas': product.image_medium,
+                    'datas_fname': str(random.randrange(100))+'.png',
+                    'type': 'binary'
+                }
+                attachment_id = self.pool.get('ir.attachment').create(cr, uid, data_attach, context=context)
+                self.pool.get('ir.attachment').write(cr, uid, attachment_id, {'name': str(attachment_id)+'.png', 'datas_fname': str(attachment_id)+'.png'}, context=context)
+                image_dic = {
+                             'product_id': product.id,
+                             'attachment_id': attachment_id,
+                             }
+                image_obj.create(cr, uid, image_dic, context=context)
+        return True
+    
+#     def product_image_update(self, cr, uid, ids, context={}):
+#         for product in self.browse(cr, uid, ids, context=context):
+#             presta_categ_id = self.pool.get('product.category').browse(cr, uid, (self.pool.get('product.category').search(cr, uid, [('name', '=', 'iPods')], context=context)), context=context)[0]
+#             data = {
+#                     'link_rewrite': ((presta_categ_id.name).lower()).replace(' ', ''),
+#                     'presta_categ_id': presta_categ_id.id,
+#                     'presta_exportable': True,
+#                     }
+#             self.write(cr, uid, [product.id], data, context=context)
+#         return True
+    
+    
     def _get_price_pricelist(self, cr, uid, shop_id, price, product, context={}):
 
         result = price
@@ -590,7 +707,7 @@ class product_product(osv.osv):
 
         result['categories']['category']={
                   'id':self.pool.get('product.category').get_ext_ref(cr, uid,
-                           shop_id, self_obj.categ_id.id, context=context) or 1}
+                           shop_id, self_obj.presta_categ_id.id, context=context) or 1}
         
         result['tags']['tag']={'id':
                                self.pool.get('prestashop.tag').get_ext_ref(cr,
@@ -605,7 +722,6 @@ class product_product(osv.osv):
                                                                uid, shop_id,
                                                                stock_id.id,
                                                                context=context) or 1}
-        
         feature_pool = self.pool.get('product.features')
         feature_value_pool = self.pool.get('product.feature.values')
         

@@ -79,7 +79,6 @@ class prestashop(object):
             return True
         
         if res_presta.ok:
-            
             info_dict = self._convert_to_dict(res_presta.content)['prestashop']
             new_dict = copy.deepcopy(info_dict)
             info_dict.update({
@@ -109,7 +108,6 @@ class prestashop(object):
 
 
     def _convert_to_dict(self, data):
-        
         return utils.ConvertXmlToDict(data)
 
     def _convert_to_xml(self, xml_data):
@@ -247,7 +245,6 @@ class prestashop(object):
         return result
 
     def search_prestashop(self, resource, options):
-
         result = []
 
         url = self.server_url + '%s/'% (resource)
@@ -255,9 +252,9 @@ class prestashop(object):
             
             options_str = self.convert_options(options)
             url = url + '?%s'% (options_str,)
+            
         res_presta = self._process_response(
                                 requests.get(url, auth=(self.server_key,'')))
-
         return res_presta
 
     def read_prestashop(self, resource, ext_ids, options=None, all_fields=True):
@@ -269,13 +266,26 @@ class prestashop(object):
             ext_ids = [ext_ids]
             
         url = self.server_url + '%s/'% (resource)
-        if  not all_fields:
+        print "________resource___________",resource
+        print "_________len(ext_ids)________",len(ext_ids)
+        if not all_fields:
             ext_ids = [str(t) for t in ext_ids]
+            if resource == 'stock_availables' and len(ext_ids) >= 1000:
+                result = [ext_ids[i:i+1000] for i in range(0,len(ext_ids),1000)]
+                flag = 0
+                for spl_list in result:
+                    options['filter[id]']=('['+'|'.join(spl_list)+']').replace("'","")
+                    res_presta_stock_1 = self.search_prestashop(resource, options)
+                    if flag == 0:
+                        res_presta_stock_final = res_presta_stock_1
+                        flag = 1 
+                    else:
+                        res_presta_stock_final['stock_availables']['stock_available'].append(res_presta_stock_1['stock_availables']['stock_available'][0])
+                return res_presta_stock_final
             options['filter[id]']=('['+'|'.join(ext_ids)+']').replace("'","")
             return self.search_prestashop(resource, options)
         
         result = []
-        
         for ext_id in ext_ids:
             new_url = url + '%s'%ext_id
             res_presta = self._process_response(

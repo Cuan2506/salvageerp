@@ -64,11 +64,11 @@
             <field name="inherit_id" ref="product.product_normal_form_view"/>
             <field name="arch" type="xml">
                 <xpath expr="/form/sheet/notebook" position="inside">
-                    <page string="Shops" attrs="{'invisible':[('presta_exportable','==',0)]}">
+                    <page string="Shops" attrs="{'invisible':[('presta_exportable','=',0)]}">
                         <field name="shop_ids" colspan="4" nolabel="1"/>
                     </page>
 
-                    <page string="Images" attrs="{'invisible':[('presta_exportable','==',0)]}">
+                    <page string="Images" attrs="{'invisible':[('presta_exportable','=',0)]}">
                         <field name="image_ids" colspan="4" nolabel="1">
                             <tree string="Images">
                                 <field name="product_id"/>
@@ -85,8 +85,9 @@
                         </field>
                     </page>
 
-                    <page string="Prestashop" attrs="{'invisible':[('presta_exportable','==',0)]}">
+                    <page string="Prestashop" attrs="{'invisible':[('presta_exportable','=',0)]}">
                         <group col="6" colspan="4">
+                        	<field name="presta_categ_id" attrs="{'required':[('presta_exportable','=',True)]}" domain="[('presta_categ','=',True)]"/>
                             <field name="date_add"/>
                             <field name="condition"/>
                             <field name="out_of_stock"/>

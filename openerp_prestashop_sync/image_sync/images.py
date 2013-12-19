@@ -171,7 +171,6 @@ class images_image(osv.osv):
         openerp_ids = self.search(cr, uid, [], context=context)
         shop_obj = self.pool.get('sale.shop').browse(cr, uid,
                                                      shop_id, context=context)
-
         if not shop_obj.last_image_sync_date:
             return openerp_ids
 
@@ -183,17 +182,15 @@ class images_image(osv.osv):
                 up_ids.append(openerp_id)
 
                 continue
-
+            
             ref_id = self.search(cr, uid, [
                     '|',
                     ('write_date','>',shop_obj.last_image_sync_date),
                     ('create_date','>',shop_obj.last_image_sync_date),
                     ('id','=',openerp_id)
             ])
-
             if ref_id:
                 up_ids.append(openerp_id)
-
         return up_ids
 
     def get_int_ref(self, cr, uid, external_reference_id, presta_id,

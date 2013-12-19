@@ -1,0 +1,27 @@
+Depending on version of prestashop please apply the patch.
+
+To apply patch. go to your prestashop directory and execute :
+
+patch -i <patch_file_name>
+
+=========================
+prestashop_v148.patch
+==========================
+
+patch for prestashop version 1.4.8
+Enable and Add Web services for TAX RULES and TAX RULES GROUP.
+
+=========================
+prestashop_v147.patch
+==========================
+
+patch for prestashop version 1.4.7
+Enable and Add Web services for TAX RULES and TAX RULES GROUP.
+
+==========================
+prestashop_tax_api.patch
+==========================
+
+patch for prestashop version 1.4
+Fix Web services for TAX
+Enable and Add Web services for TAX, TAX RULES and TAX RULES GROUP.

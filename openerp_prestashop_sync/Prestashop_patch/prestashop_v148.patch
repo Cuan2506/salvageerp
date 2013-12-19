@@ -1,0 +1,57 @@
+Index: classes/TaxRule.php
+===================================================================
+--- classes/TaxRule.php	(revision 15361)
++++ classes/TaxRule.php	(working copy)
+@@ -40,7 +40,16 @@
+ 
+ 	protected 	$table = 'tax_rule';
+ 	protected 	$identifier = 'id_tax_rule';
+-
++	
++	//Enable web service api for tax_rules
++    protected $webserviceParameters = array(
++        'fields' => array(
++            'id_tax_rules_group' => array('xlink_resource'=> 'tax_rule_groups'),
++            'id_state' => array('xlink_resource'=> 'states'),
++            'id_country' => array('xlink_resource'=> 'countries')
++        ),
++    );
++	
+ 	public function getFields()
+ 	{
+ 	  parent::validateFields();
+Index: classes/WebserviceRequest.php
+===================================================================
+--- classes/WebserviceRequest.php	(revision 15361)
++++ classes/WebserviceRequest.php	(working copy)
+@@ -261,6 +261,9 @@
+ 			'stock_movement_reasons' => array('description' => 'The stock movement reason', 'class' => 'StockMvtReason'),
+ 			'content_management_system' => array('description' => 'Content management system', 'class' => 'CMS'),
+ 			'taxes' => array('description' => 'The tax rate', 'class' => 'Tax'),
++			// Add tax_rules and tax_rule_groups in api list
++            'tax_rules' => array('description' => 'Tax rules entity', 'class' => 'TaxRuleCore'),
++			'tax_rule_groups' => array('description' => 'Tax rule groups', 'class' => 'TaxRulesGroupCore'),
+ 			'customer_messages' => array('description' => 'Customer messages', 'class' => 'CustomerMessage'),
+ 			'customer_threads' => array('description' => 'Customer threads', 'class' => 'CustomerThread'),
+ 		);
+Index: classes/TaxRulesGroup.php
+===================================================================
+--- classes/TaxRulesGroup.php	(revision 15361)
++++ classes/TaxRulesGroup.php	(working copy)
+@@ -44,7 +44,15 @@
+ 
+ 	public static $canada_iso = 'CA';
+ 	public static $canada_states_iso = array('QC', 'PE');
+-
++	
++	//Enable web service api for tax_rules_groups
++    protected $webserviceParameters = array(
++        'objectsNodeName' => 'tax_rule_groups',
++        'objectNodeName' => 'tax_rule_group',
++        'fields' => array(
++        ),
++    );
++	
+ 	public function getFields()
+ 	{
+ 		parent::validateFields();

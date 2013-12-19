@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+	<data>
+    	<record id="view_partner_category_presta_form" model="ir.ui.view">
+        	<field name="name">res.partner.category.presta</field>
+            <field name="model">res.partner.category</field>
+            <field name="inherit_id" ref="base.view_partner_category_form"/>
+            <field name="arch" type="xml">
+            	<xpath expr="/form/group/field[@name='name']" position="after">
+                </xpath>
+            </field>
+        </record>
+    
+		<record id="presta_view_partner_form_inherit" model="ir.ui.view">
+			<field name="name">presta.res.partner.form.inherit</field>
+			<field name="model">res.partner</field>
+			<field name="inherit_id" ref="base.view_partner_form"/>
+			<field name="arch" type="xml">
+				<xpath expr="/form/sheet/div/h1/field[@name='name']" position="after">
+					<field name="lastname"/>
+					<field name="birthday"/>
+				</xpath>
+				<xpath expr="/form/sheet/notebook/page/group/group/field[@name='lang']" position="after">
+					<field name="optin"/>
+					<field name="newsletter"/>
+					<field name="id_default_group"/>
+				</xpath>
+				<xpath expr="/form/sheet/notebook/page/group/group/field[@name='supplier']" position="after">
+					<field name="is_manufacturer"/>
+					<field name="is_guest"/>
+					<field name="is_carrier"/>
+				</xpath>
+		    </field>
+		 </record>
+    
+    </data>
+</openerp>

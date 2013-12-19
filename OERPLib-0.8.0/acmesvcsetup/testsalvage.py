@@ -35,12 +35,12 @@ try:
     # -- Dynamic methods -- #
     # --------------------- #
 
-	module_id  = oerp.get('ir.module.module')
-	module_ids = module_id.search(cr, uid, [])
-	string = ''
-	for i in module_id.browse(cr, uid, module_ids):
-		string += str(i.name)+','
-	print "Module ::",string
+    module_id = oerp.get('ir.module.module')
+    module_ids = module_id.search(cr, uid, [])
+    string = ''
+    for i in module_id.browse(cr, uid, module_ids):
+      string += str(i.name)+','
+    print "Module ::",string
 	
     # # Get the model
     # user_obj = oerp.get('res.users')
